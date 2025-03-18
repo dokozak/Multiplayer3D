@@ -1,5 +1,16 @@
+using System;
+using System.Collections.Generic;
 using Fusion;
+using Fusion.Sockets;
 using UnityEngine;
+
+
+public struct PlayerInputData : INetworkInput
+{
+    public Vector2 moveInput;
+    public float rotationInput;
+
+}
 
 public class PlayerController : NetworkBehaviour
 {
@@ -8,30 +19,28 @@ public class PlayerController : NetworkBehaviour
 
     private CharacterController characterController;
 
-    public override void Spawned()
+    private void Start()
     {
-        if (Object.HasInputAuthority)
+        characterController = GetComponent<CharacterController>();
+
+        if (false)
         {
-        //    Camera playerCamera = GetComponentInChildren<Camera>();
-          //  playerCamera.gameObject.SetActive(true);
+            Camera playerCamera = GetComponentInChildren<Camera>();
+            playerCamera.gameObject.SetActive(true);
         }
     }
 
     public override void FixedUpdateNetwork()
     {
-        if (!Object.HasInputAuthority) return;
+        if (HasInputAuthority)
+        {
+            if (GetInput(out PlayerInputData input))
+            {
+                Vector3 moveDirection = new Vector3(input.moveInput.x, 0, input.moveInput.y);
+                characterController.Move(moveDirection * speed * Runner.DeltaTime);
+                transform.Rotate(0, input.rotationInput * rotationSpeed * Runner.DeltaTime,0);
 
-        Vector3 move = Vector3.zero;
-
-        if (Input.GetKey(KeyCode.W)) move += transform.forward;
-        if (Input.GetKey(KeyCode.S)) move -= transform.forward;
-        if (Input.GetKey(KeyCode.A)) move -= transform.right;
-        if (Input.GetKey(KeyCode.D)) move += transform.right;
-
-        move *= speed * Runner.DeltaTime;
-        transform.position += move;
-
-       float mouseX = Input.GetAxis("Mouse X") * rotationSpeed * Runner.DeltaTime;
-       transform.Rotate(0, mouseX, 0);
+            }
+        }
     }
 }

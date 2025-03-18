@@ -2,17 +2,18 @@ using System.Collections.Generic;
 using Fusion;
 using Fusion.Sockets;
 using UnityEngine;
-using static Unity.Collections.Unicode;
 
 public class PlayerSpaw : MonoBehaviour, INetworkRunnerCallbacks
 {
-    public NetworkPrefabRef playerPrefab;
+    public NetworkObject playerPrefab;
     public Transform[] spawnPoints;
 
     private NetworkRunner runner;
 
     private void Start()
     {
+        Application.targetFrameRate = 60;
+        QualitySettings.vSyncCount = 0;
         StartGame();
     }
 
@@ -24,8 +25,9 @@ public class PlayerSpaw : MonoBehaviour, INetworkRunnerCallbacks
         await runner.StartGame(new StartGameArgs()
         {
             GameMode = GameMode.AutoHostOrClient,
-            SessionName = "MiSesion",
-            SceneManager = gameObject.AddComponent<NetworkSceneManagerDefault>()
+            SessionName = "MySession",
+            SceneManager = gameObject.AddComponent<NetworkSceneManagerDefault>(),
+            PlayerCount = 2
         });
     }
 
@@ -39,12 +41,20 @@ public class PlayerSpaw : MonoBehaviour, INetworkRunnerCallbacks
     }
 
     private void SpawnPlayer(PlayerRef player)
-    {
+    { 
         Transform spawnPoint = spawnPoints[Random.Range(0, spawnPoints.Length)];
         runner.Spawn(playerPrefab, spawnPoint.position, spawnPoint.rotation, player);
     }
     public void OnPlayerLeft(NetworkRunner runner, PlayerRef player) { }
-    public void OnInput(NetworkRunner runner, NetworkInput input) { }
+    public void OnInput(NetworkRunner runner, NetworkInput input) {
+        PlayerInputData inputData = new PlayerInputData
+        {
+            moveInput = new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical")),
+            rotationInput = Input.GetAxis("Mouse X")
+        };
+
+        input.Set(inputData);
+    }
     public void OnShutdown(NetworkRunner runner, ShutdownReason shutdownReason) { }
     public void OnConnectedToServer(NetworkRunner runner) { }
     public void OnDisconnectedFromServer(NetworkRunner runner) { }
